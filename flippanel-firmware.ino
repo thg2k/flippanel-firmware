@@ -250,6 +250,21 @@ void draw_buffer_differential() {
 
 /* ------------------------------------------------------------------------ */
 
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PIN_CCLK, OUTPUT);
+  pinMode(PIN_CDAT, OUTPUT);
+  pinMode(PIN_CRES, OUTPUT);
+
+  Serial.begin(115200);
+
+  Serial.println("INIT");
+}
+
 void loop() {
-  
+  Serial.println("LOOP");
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
 }
