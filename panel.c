@@ -1,3 +1,16 @@
+#define PIN_CCLK 7
+#define PIN_CDAT 8
+#define PIN_CRES 9
+
+
+#define PIN_RST 2
+#define PIN_SRCLK 3
+#define PIN_RCLK 4
+#define PIN_OE 5
+#define PIN_SER 6
+
+
+
 
 #define DISPLAY_COLS 90
 #define DISPLAY_ROWS 24
