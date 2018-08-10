@@ -11,7 +11,11 @@
 #define SER 6
 
 #define DelLogic 0
-#define DelPx 20
+#define DelPx 10
+
+#define DISPLAY_COLS 90
+#define DISPLAY_ROWS 24
+#define DISPLAY_ROWS_BLKS 3
 
 int f = 0;
 byte Regs[6];
@@ -19,6 +23,121 @@ byte Regs[6];
 byte buff[90][3];
 
 #define Cnum 8
+
+
+int read_serial_byte() {
+  while (!Serial.available()) { }
+  
+  int c = Serial.read();
+  //Serial.print("GOT=");
+  //Serial.println(c, HEX);
+  return c;
+}
+
+int read_serial_hex() {
+  byte hexdigits[3] = { 255, 255, 0 };
+  const byte *hexptr = hexdigits;
+  Serial.readBytes(hexdigits, 2);
+
+  int c = strtol(hexdigits, &hexptr, 16);
+
+//  Serial.print("hexdigits[0]=");
+//  Serial.println(hexdigits[0]);
+//  Serial.print("hexdigits[1]=");
+//  Serial.println(hexdigits[1]);
+//  Serial.print("hexdigits[2]=");
+//  Serial.println(hexdigits[2]);
+//  Serial.println(*hexptr);
+
+  if (*hexptr == '\0')
+    return c;
+    
+  return -1;
+}
+
+
+inline void led_on() {
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+inline void led_off() {
+  digitalWrite(LED_BUILTIN, LOW);
+}
+
+void read_serial_commands() {
+  led_on();
+  Serial.println("CMD?");
+
+  char ch = read_serial_byte();
+  led_off();
+
+  if (ch == 'd') {
+        for (int ii = 0; ii < DISPLAY_COLS; ii++) {
+          for (int jj = 0; jj < DISPLAY_ROWS_BLKS; jj++) {
+            buff[ii][jj] = 0;
+      }
+    }
+        
+    // read 570 hex characters (0-9A-F)
+    Serial.println("READING BYTES");
+    bool all_ok = true;
+    for (int ii = 0; ii < DISPLAY_COLS; ii++) {
+      for (int jj = 0; jj < DISPLAY_ROWS_BLKS; jj++) {
+        int c = read_serial_hex();
+        if (c < 0)
+          all_ok = false;
+        else
+          buff[ii][jj] = (byte) c;
+        
+        if (!all_ok)
+          break;
+  
+        //led_on();
+        //delay(50);
+        //led_off();
+        //delay(50);
+      }
+      
+      if (!all_ok)
+        break;
+    };
+
+    Serial.println("ACK");
+
+    Cpush();
+    //draw_buffer_differential();
+    Serial.println("DONE");
+  }
+
+  if (ch == 'c') {
+    // clear
+    //draw_buffer();
+                for (int ii = 0; ii < DISPLAY_COLS; ii++) {
+      for (int jj = 0; jj < DISPLAY_ROWS_BLKS; jj++) {
+buff[ii][jj] = 0x00;
+      }
+        }
+Cpush();
+
+  }
+
+  if (ch == 'f') {
+    //fill
+            for (int ii = 0; ii < DISPLAY_COLS; ii++) {
+      for (int jj = 0; jj < DISPLAY_ROWS_BLKS; jj++) {
+buff[ii][jj] = 0xff;
+      }
+        }
+Cpush();
+    Serial.println("EXEC: FILL");
+  }
+
+  if (ch == '1') {
+    Serial.println("EXEC: test_basic_1");
+    //test_basic_1();
+  }
+}
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -28,7 +147,7 @@ void setup() {
   pinMode(CRES, OUTPUT);
 
   InitRows();
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   buff[0][0] = 0xF8;
   buff[0][1] = 0x81;
@@ -79,14 +198,16 @@ void setup() {
   buff[84][1] = 0x3C;
   
   
-  for(int i = 0; i < 90; i++)
-    for(int j = 0; j < 3; j++)
-      buff[i][j] = 0xFF;
+ // for(int i = 0; i < 90; i++)
+ //   for(int j = 0; j < 3; j++)
+ //     buff[i][j] = 0xFF;
       
   
 }
 
 void loop() {
+
+  
   //reset-init
   digitalWrite(CCLK, HIGH);
   digitalWrite(CDAT, HIGH);
@@ -109,7 +230,12 @@ void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
   int i = 0;
 Serial.println("pre cpush");
-  Cpush();
+
+  while (true) {
+    read_serial_commands();
+  }
+
+//  Cpush();
   
   while(1){
     
